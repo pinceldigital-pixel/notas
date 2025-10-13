@@ -52,8 +52,8 @@ function render(){
           <div class="sub">${fmtDateLabel(n.date)} - A LAS ${n.time} HRS</div>
         </div>
         <div class="actions">
-          <button class="iconbtn" title="Editar">✎</button>
-          <button class="iconbtn" title="Eliminar">🗑</button>
+          <button class="iconbtn" title="Editar"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25z" stroke="currentColor" stroke-width="1.5" fill="currentColor"/><path d="M14.06 6.19l3.75 3.75" stroke="currentColor" stroke-width="1.5"/></svg></button>
+          <button class="iconbtn" title="Eliminar"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 7h16" stroke="currentColor" stroke-width="2"/><path d="M10 4h4a2 2 0 0 1 2 2v1H8V6a2 2 0 0 1 2-2z" stroke="currentColor" stroke-width="2"/><path d="M7 7l1 12a2 2 0 0 0 2 2h4a2 2 0 0 0 2-2l1-12" stroke="currentColor" stroke-width="2"/></svg></button>
         </div>
       </div>
     `;

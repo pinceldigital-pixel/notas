@@ -7,9 +7,9 @@
 .content{max-width:900px;margin:0 auto;padding:12px 16px 96px}
 .list{display:flex;flex-direction:column;gap:14px}
 .item{background:#151515;border:1px solid #262626;border-radius:18px;padding:14px 14px 14px 10px;box-shadow:0 2px 8px rgba(0,0,0,.25)}
-.row{display:flex;gap:10px}
+.row{display:flex;gap:10px;align-items:flex-start}
 .square{width:16px;height:16px;border-radius:4px;background:#3BA2FF;margin-top:4px}
-.title{font-size:32px;line-height:1.1;font-weight:700;color:#e6e6e6;margin-right:8px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.title{font-size:28px;line-height:1.15;font-weight:800;color:#e6e6e6;margin-right:8px;flex:1;min-width:0;white-space:normal;overflow:visible;text-overflow:clip}
 .alarm{color:#ff8a1f;font-size:28px}
 .sub{color:#52d2ff;font-weight:600;margin-top:4px}
 .actions{display:flex;gap:8px;margin-left:8px}
@@ -33,3 +33,6 @@
 .btn.primary{background:#f3f3f3;color:#111;border-color:#f3f3f3}
 .hidden{display:none}
 .sep{height:1px;background:#222;margin:8px -14px}
+
+.icon24{width:24px;height:24px;display:inline-block}
+.iconbtn svg{width:20px;height:20px}
