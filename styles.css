@@ -42,3 +42,8 @@ footer.watermark{position:fixed;right:12px;bottom:6px;color:color-mix(in oklab,v
 .hbar{padding:8px 0}
 .add-btn{width:52px;height:52px;font-size:24px;bottom:20px}
 .badge{padding:1px 6px;font-size:10px}
+
+.actions button svg{display:block;margin:auto;color:var(--soft)}
+.actions button:hover svg{color:var(--accent)}
+.add-btn svg{color:var(--cream);display:block;margin:auto}
+.add-btn:hover svg{color:var(--soft)}
