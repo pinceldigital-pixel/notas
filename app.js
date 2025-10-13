@@ -65,7 +65,7 @@ function render() {
     const p = document.createElement("p");
     p.style.color = "color-mix(in oklab, var(--soft) 90%, transparent)";
     p.style.minHeight = "3.6em";
-    p.textContent = n.body || "Sin contenido";
+    p.textContent = (n.body || "Sin contenido").length > 100 ? (n.body.slice(0,100)+"…") : (n.body || "Sin contenido");
     card.appendChild(p);
 
     const meta = document.createElement("div");
