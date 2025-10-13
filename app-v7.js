@@ -182,3 +182,23 @@ document.addEventListener('click', (e)=>{
   if(!sheet) return;
   if(!sheet.contains(e.target)) closeModal();
 });
+
+function bindFab(){
+  try{
+    const fab = document.getElementById('fab');
+    const addTop = document.getElementById('addTop');
+    if(fab){
+      fab.onclick = () => openModal();
+      fab.addEventListener('touchend', (e)=>{ e.preventDefault(); openModal(); }, {passive:false});
+    }
+    if(addTop){
+      addTop.onclick = () => openModal();
+      addTop.addEventListener('touchend', (e)=>{ e.preventDefault(); openModal(); }, {passive:false});
+    }
+  }catch(e){}
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', bindFab);
+}else{
+  bindFab();
+}
