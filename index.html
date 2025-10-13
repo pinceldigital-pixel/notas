@@ -20,6 +20,8 @@
   <main class="content">
     <section id="list" class="list"></section>
   </main>
+<button id="fab" class="fab" aria-label="Añadir">+</button>
+<script id="INLINE_BINDER">(function(){function open(){var m=document.getElementById('modal');if(m){m.style.display='grid';m.classList.add('is-open');}}function bind(){var b=document.getElementById('fab');if(b){b.onclick=open;b.addEventListener('touchend',function(e){e.preventDefault();open();},{passive:false});}var t=document.getElementById('addTop');if(t){t.onclick=open;t.addEventListener('touchend',function(e){e.preventDefault();open();},{passive:false});}}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bind);}else{bind();}})();</script>
 
   <button id="fab" class="fab" aria-label="Añadir nota">+</button>
 
