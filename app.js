@@ -40,13 +40,12 @@ function byId(id){ return document.getElementById(id); }
 function render() {
   notes.sort((a,b)=> b.updatedAt - a.updatedAt);
   const list = byId("list");
-  const empty = byId("empty");
   list.innerHTML = "";
   if (notes.length === 0) {
-    empty.style.display = "";
+    
     return;
   }
-  empty.style.display = "none";
+  
 
   for (const n of notes) {
     const card = document.createElement("div");
