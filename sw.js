@@ -1,4 +1,4 @@
-const CACHE = 'notinote-v1';
+const CACHE = 'notinote-v3';
 const ASSETS = [
   './',
   './index.html',
