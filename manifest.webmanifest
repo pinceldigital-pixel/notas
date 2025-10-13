@@ -1,6 +1,6 @@
 {
-  "name": "NotiNote",
-  "short_name": "NotiNote",
+  "name": "Notas cortas",
+  "short_name": "Notas cortas",
   "description": "Notas rápidas con recordatorios opcionales. Instalá y usala offline.",
   "start_url": "./index.html",
   "scope": "./",
