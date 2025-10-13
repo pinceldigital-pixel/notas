@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a0a">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icons/icon-192.png">
+  <title>NotiNote</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <img src="icons/icon-192.png" class="appicon" alt="NotiNote">
+    <h1>NotiNote</h1>
+    <input id="search" type="search" placeholder="Buscar…">
+  </header>
+
+  <main class="content">
+    <section id="list" class="list"></section>
+  </main>
+
+  <button id="fab" class="fab" aria-label="Añadir nota">+</button>
+
+  <!-- Modal -->
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true">
+    <div class="sheet">
+      <div class="sheet-head">
+        <h2 id="modalTitle">Nueva nota</h2>
+        <button id="closeModal" class="iconbtn" title="Cerrar">✕</button>
+      </div>
+      <label class="label">Nota corta</label>
+      <input id="noteTitle" maxlength="60" class="input" placeholder="Ej: Comprar jabón">
+
+      <div class="grid2">
+        <div>
+          <label class="label">Día / fecha</label>
+          <div class="withicon">
+            <span class="mini">📅</span>
+            <input id="noteDate" type="date" class="input">
+          </div>
+        </div>
+        <div>
+          <label class="label">Hora</label>
+          <div class="withicon">
+            <span class="mini">⏰</span>
+            <input id="noteTime" type="time" class="input">
+          </div>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button id="saveNote" class="btn primary">Guardar</button>
+        <button id="cancelNote" class="btn">Cancelar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
