@@ -89,6 +89,7 @@ function removeNote(id){
   saveNotes(notes);
   if(timers[id]){ clearTimeout(timers[id]); delete timers[id]; }
   render();
+  try{ closeModal(); }catch(e){}
 }
 
 async function upsertNote(){ // validar y guardar
@@ -112,13 +113,14 @@ async function upsertNote(){ // validar y guardar
   saveNotes(notes);
   scheduleTimers(); // reagendar
   render();
+  try{ closeModal(); }catch(e){}
   closeModal();
 }
 
 // --- SW & notifications ---
 async function ensureSW(){
   if('serviceWorker' in navigator){
-    try { return await navigator.serviceWorker.register('./sw.js'); } catch(e){}
+    try { return await navigator.serviceWorker.register('./sw-v7.js'); } catch(e){}
   }
   return null;
 }
@@ -164,6 +166,7 @@ search.oninput = render;
   await ensureSW();
   closeModal();
   render();
+  try{ closeModal(); }catch(e){}
   scheduleTimers();
 })();
 // Extra: cerrar con ESC y click en overlay
