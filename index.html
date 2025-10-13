@@ -1,64 +1,124 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#0b0b0b">
-  <link rel="manifest" href="manifest-v8.webmanifest">
-  <link rel="icon" href="icons/icon-192.png">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Notas cortas</title>
+  <link rel="manifest" href="manifest-v9.webmanifest">
   <link rel="stylesheet" href="styles-v8.css">
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; margin:0; padding:0; background:#f7f7f7; }
+    header { display:flex; justify-content:center; align-items:center; padding:1rem; }
+    h1 { font-size:1.5rem; font-weight:400; margin:0; color:#333; }
+    main { padding:1rem; }
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: #333;
+      color: white;
+      font-size: 2rem;
+      border: none;
+      cursor: pointer;
+    }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.3);
+      align-items: flex-end;
+      justify-content: center;
+    }
+    .modal.is-open { display: flex; }
+    .sheet {
+      background: white;
+      width: 100%;
+      max-width: 500px;
+      padding: 1rem;
+      border-top-left-radius: 12px;
+      border-top-right-radius: 12px;
+      box-shadow: 0 -2px 10px rgba(0,0,0,0.2);
+    }
+    input, textarea {
+      width: 100%;
+      margin-bottom: 10px;
+      padding: 0.5rem;
+      font-size: 1rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button.save {
+      background: #333;
+      color: #fff;
+      border: none;
+      padding: 0.7rem 1rem;
+      border-radius: 4px;
+      font-size: 1rem;
+    }
+  </style>
 </head>
 <body>
-  <header class="topbar">
-    <img src="icons/icon-192.png" class="appicon" alt="NotiNote">
+  <header>
     <h1>Notas cortas</h1>
-    <input id="search" type="search" placeholder="Buscar…">
-    <button id="addTop" class="iconbtn" aria-label="Añadir" title="Añadir" style="margin-left:8px">+</button>
-</header>
+  </header>
 
-  <main class="content">
-    <section id="list" class="list"></section>
+  <main>
+    <div id="notesList"></div>
   </main>
-<button id="fab" class="fab" aria-label="Añadir">+</button>
-<script id="INLINE_BINDER">(function(){function open(){var m=document.getElementById('modal');if(m){m.style.display='grid';m.classList.add('is-open');}}function bind(){var b=document.getElementById('fab');if(b){b.onclick=open;b.addEventListener('touchend',function(e){e.preventDefault();open();},{passive:false});}var t=document.getElementById('addTop');if(t){t.onclick=open;t.addEventListener('touchend',function(e){e.preventDefault();open();},{passive:false});}}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',bind);}else{bind();}})();</script>
 
-  <button id="fab" class="fab" aria-label="Añadir nota">+</button>
+  <button id="fab" class="fab" aria-label="Añadir">+</button>
 
-  <!-- Modal -->
-  <div id="modal" class="modal" style="display:none">
+  <div id="modal" class="modal" style="display:none;">
     <div class="sheet">
-      <div class="sheet-head">
-        <h2 id="modalTitle">Nueva nota</h2>
-        <button id="closeModal" class="iconbtn" title="Cerrar">✕</button>
-      </div>
-      <label class="label">Nota corta</label>
-      <input id="noteTitle" maxlength="60" class="input" placeholder="Ej: Comprar jabón">
-
-      <div class="grid2">
-        <div>
-          <label class="label">Día / fecha <span class="hint">(opcional)</span></label>
-          <div class="withicon">
-            <svg class="mini" width="18" height="18" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2" stroke="currentColor" fill="none"/><path d="M3 9h18" stroke="currentColor"/></svg>
-            <input id="noteDate" type="date" class="input">
-          </div>
-        </div>
-        <div>
-          <label class="label">Hora <span class="hint">(opcional)</span></label>
-          <div class="withicon">
-            <svg class="mini" width="18" height="18" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" stroke="currentColor" fill="none"/><path d="M12 7v5l3 2" stroke="currentColor" fill="none" stroke-linecap="round"/></svg>
-            <input id="noteTime" type="time" class="input">
-          </div>
-        </div>
-      </div>
-
-      <div class="actions">
-        <button id="saveNote" class="btn primary">Guardar</button>
-        <button id="cancelNote" class="btn">Cancelar</button>
-      </div>
+      <input id="noteText" placeholder="Escribe tu nota...">
+      <input id="noteDate" type="date">
+      <button class="save" onclick="saveNote()">Guardar</button>
     </div>
   </div>
 
-  <script src="app-v8.js"></script>
+  <script>
+    const modal = document.getElementById('modal');
+    const fab = document.getElementById('fab');
+    const notesList = document.getElementById('notesList');
+    const noteText = document.getElementById('noteText');
+    const noteDate = document.getElementById('noteDate');
+
+    fab.addEventListener('click', openModal);
+    fab.addEventListener('touchend', e=>{e.preventDefault(); openModal();},{passive:false});
+
+    function openModal(){
+      modal.style.display = 'flex';
+      modal.classList.add('is-open');
+    }
+
+    modal.addEventListener('click', e=>{
+      if(e.target === modal){ closeModal(); }
+    });
+
+    document.addEventListener('keydown', e=>{
+      if(e.key === 'Escape'){ closeModal(); }
+    });
+
+    function closeModal(){
+      modal.style.display = 'none';
+      modal.classList.remove('is-open');
+    }
+
+    function saveNote(){
+      const text = noteText.value.trim();
+      const date = noteDate.value;
+      if(!text) return;
+      const note = document.createElement('div');
+      note.textContent = date ? text + " (" + date + ")" : text;
+      notesList.appendChild(note);
+      noteText.value = '';
+      noteDate.value = '';
+      closeModal();
+    }
+  </script>
 </body>
 </html>
