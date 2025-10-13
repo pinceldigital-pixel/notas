@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Keep Note – Daniel</title>
+  <meta name="theme-color" content="#EB5E28"/>
+  <link rel="manifest" href="manifest.json"/>
+  <link rel="icon" href="icon-192.png" sizes="192x192"/>
+  <link rel="apple-touch-icon" href="icon-192.png"/>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body>
+  <header>
+    <div class="container hbar">
+      <h1 style="margin:0;font-size:20px">Keep Note</h1>
+      <div class="avatar"></div>
+    </div>
+  </header>
+
+  <main class="container">
+    <div id="list" class="grid"></div>
+    <div id="empty" class="empty" style="display:none">No hay notas. Tocá “+” para crear una. 😉</div>
+  </main>
+
+  <button id="add" class="add-btn" title="Nueva nota">+</button>
+  <button id="install" class="install-btn" style="display:none">Instalar app</button>
+
+  <footer class="watermark">Hecho con ❤ y café</footer>
+
+  <dialog id="editor" class="modal">
+    <form method="dialog" id="editorForm" onsubmit="return false;">
+      <h3 id="editorTitle">Nueva nota</h3>
+      <input id="title" type="text" placeholder="Título" />
+      <textarea id="body" placeholder="Escribí tu nota..."></textarea>
+
+      <div class="color-row" id="colorRow"></div>
+
+      <label style="display:flex;align-items:center;gap:8px;margin-top:8px;font-size:14px">
+        <input type="checkbox" id="useReminder"/> Programar recordatorio
+      </label>
+      <input type="datetime-local" id="reminderDT" style="display:none"/>
+
+      <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:12px">
+        <button id="cancelBtn">Cancelar</button>
+        <button id="saveBtn" style="background:var(--accent);color:var(--cream);border:none;border-radius:8px;padding:8px 12px">Guardar</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="app.js"></script>
+</body>
+</html>
