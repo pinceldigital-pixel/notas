@@ -36,3 +36,7 @@
 
 .icon24{width:24px;height:24px;display:inline-block}
 .iconbtn svg{width:20px;height:20px}
+
+/* non-bold */
+h1,h2,h3,.title,.label{font-weight:400 !important}
+.sub{color:#A7B1C2 !important}
