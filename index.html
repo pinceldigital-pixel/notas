@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Notas Cortas</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+        /* Estilo para un scrollbar más sutil en navegadores Webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* bg-gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* bg-gray-600 */
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* bg-gray-500 */
+        }
+        /* Oculta las flechas del input number/date */
+        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+    </style>
+<meta content="#111827" name="theme-color"/><link href="manifest.webmanifest" rel="manifest"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/><link href="icons/icon-192.png" rel="icon" sizes="192x192"/><link href="icons/icon-512.png" rel="icon" sizes="512x512"/></head>
+<body class="bg-gray-900 text-white font-sans antialiased">
+<div class="container mx-auto px-4 py-8 min-h-screen" id="app">
+<h1 class="text-4xl font-bold text-center mb-10">¡Notas cortas!</h1>
+<!-- Contenedor de las notas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pb-28" id="notes-container">
+<!-- Las notas se insertarán aquí dinámicamente -->
+</div>
+<!-- Botón para agregar nueva nota -->
+<button class="fixed bottom-8 right-8 w-16 h-16 bg-indigo-600 rounded-full flex items-center justify-center shadow-lg hover:bg-indigo-700 transition-transform transform hover:scale-110 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-900 focus:ring-indigo-500" id="add-note-btn">
+<svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+<path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round"></path>
+</svg>
+</button>
+</div>
+<!-- Modal para crear/editar nota -->
+<div class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center p-4 hidden z-50" id="note-modal">
+<div class="bg-gray-800 rounded-2xl shadow-2xl p-6 w-full max-w-md transform transition-all" id="modal-content">
+<h2 class="text-2xl font-bold mb-4" id="modal-title">Nueva Nota</h2>
+<textarea class="w-full h-40 bg-gray-700 rounded-lg p-3 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500 resize-none" id="note-input" placeholder="Escribe tu nota aquí..."></textarea>
+<div class="mt-4">
+<label class="block text-sm font-medium text-gray-400 mb-1" for="notification-time">Recordatorio (opcional)</label>
+<input class="w-full bg-gray-700 rounded-lg p-2 text-white focus:outline-none focus:ring-2 focus:ring-indigo-500" id="notification-time" type="datetime-local"/>
+</div>
+<div class="mt-4">
+<p class="block text-sm font-medium text-gray-400 mb-2">Color de la nota</p>
+<div class="flex space-x-3" id="color-palette">
+<!-- Los colores se generan aquí -->
+</div>
+</div>
+<div class="flex justify-end space-x-4 mt-6">
+<button class="px-6 py-2 bg-gray-600 rounded-lg hover:bg-gray-700 transition" id="cancel-btn">Cancelar</button>
+<button class="px-6 py-2 bg-indigo-600 rounded-lg hover:bg-indigo-700 transition" id="save-btn">Guardar</button>
+</div>
+</div>
+</div>
+<script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const notesContainer = document.getElementById('notes-container');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const noteModal = document.getElementById('note-modal');
+            const modalContent = document.getElementById('modal-content');
+            const modalTitle = document.getElementById('modal-title');
+            const noteInput = document.getElementById('note-input');
+            const notificationInput = document.getElementById('notification-time');
+            const colorPalette = document.getElementById('color-palette');
+            const cancelBtn = document.getElementById('cancel-btn');
+            const saveBtn = document.getElementById('save-btn');
+
+            let notes = JSON.parse(localStorage.getItem('notes-app-data')) || [];
+            let editingNoteId = null;
+            let selectedColor = 'bg-gray-700';
+            const colors = ['bg-rose-500', 'bg-amber-500', 'bg-emerald-500', 'bg-sky-500', 'bg-violet-500', 'bg-gray-500'];
+
+            // --- Notificaciones ---
+            const requestNotificationPermission = () => {
+                if ('Notification' in window && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+            };
+
+            const checkNotifications = () => {
+                const now = new Date().getTime();
+                notes.forEach(note => {
+                    if (note.notificationTime && !note.notified) {
+                        const notificationTime = new Date(note.notificationTime).getTime();
+                        if (now >= notificationTime) {
+                            new Notification('Recordatorio de Nota', {
+                                body: note.content.substring(0, 100) + '...',
+                                icon: 'https://placehold.co/64x64/7c3aed/ffffff?text=N!',
+                            });
+                            note.notified = true;
+                            saveNotes();
+                        }
+                    }
+                });
+            };
+
+            // --- Lógica de la aplicación ---
+            const renderColors = () => {
+                colorPalette.innerHTML = '';
+                colors.forEach(color => {
+                    const colorDot = document.createElement('div');
+                    colorDot.className = `w-8 h-8 rounded-full cursor-pointer transition transform hover:scale-110 ${color}`;
+                    if (color === selectedColor) {
+                        colorDot.classList.add('ring-2', 'ring-offset-2', 'ring-offset-gray-800', 'ring-white');
+                    }
+                    colorDot.addEventListener('click', () => {
+                        selectedColor = color;
+                        renderColors();
+                    });
+                    colorPalette.appendChild(colorDot);
+                });
+            };
+
+            const saveNotes = () => {
+                localStorage.setItem('notes-app-data', JSON.stringify(notes));
+            };
+
+            const renderNotes = () => {
+                notesContainer.innerHTML = '';
+                if(notes.length === 0) {
+                    notesContainer.innerHTML = `
+                        <div class="col-span-full text-center text-gray-500 mt-16">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                            <p class="mt-2">No tienes notas todavía.</p>
+                            <p>¡Crea una con el botón '+'!</p>
+                        </div>
+                    `;
+                    return;
+                }
+
+                notes.forEach(note => {
+                    const noteEl = document.createElement('div');
+                    const noteBgColor = note.color.replace('bg', 'hover:bg').replace('-500', '-600');
+                    noteEl.className = `p-5 rounded-xl shadow-md flex flex-col justify-between transition ${note.color} ${noteBgColor}`;
+                    
+                    const notificationDate = note.notificationTime ? new Date(note.notificationTime) : null;
+                    const formattedDate = notificationDate ? notificationDate.toLocaleString('es-ES', { day: '2-digit', month: 'short', hour: '2-digit', minute:'2-digit' }) : '';
+                    
+                    noteEl.innerHTML = `
+                        <div class="whitespace-pre-wrap flex-grow">${note.content}</div>
+                        <div class="mt-4 pt-2 border-t border-white/20">
+                            ${note.notificationTime ? `
+                            <div class="flex items-center text-xs text-white/80 mb-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 mr-1.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                                <span>${formattedDate}</span>
+                            </div>` : ''}
+                            <div class="flex justify-end space-x-2">
+                                <button class="edit-btn p-2 rounded-full hover:bg-black/20" data-id="${note.id}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg>
+                                </button>
+                                <button class="delete-btn p-2 rounded-full hover:bg-black/20" data-id="${note.id}">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    notesContainer.appendChild(noteEl);
+                });
+            };
+
+            const openModal = (note = null) => {
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+                noteModal.classList.remove('hidden');
+
+                if (note) {
+                    editingNoteId = note.id;
+                    modalTitle.textContent = 'Editar Nota';
+                    noteInput.value = note.content;
+                    notificationInput.value = note.notificationTime || '';
+                    selectedColor = note.color;
+                } else {
+                    editingNoteId = null;
+                    modalTitle.textContent = 'Nueva Nota';
+                    noteInput.value = '';
+                    notificationInput.value = '';
+                    selectedColor = colors[Math.floor(Math.random() * colors.length)];
+                }
+                renderColors();
+            };
+
+            const closeModal = () => {
+                modalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => {
+                    noteModal.classList.add('hidden');
+                }, 150);
+            };
+
+            // --- Event Listeners ---
+            addNoteBtn.addEventListener('click', () => openModal());
+            cancelBtn.addEventListener('click', closeModal);
+
+            saveBtn.addEventListener('click', () => {
+                const content = noteInput.value.trim();
+                const notificationTime = notificationInput.value;
+
+                if (!content) return;
+
+                if (editingNoteId) {
+                    const note = notes.find(n => n.id === editingNoteId);
+                    note.content = content;
+                    note.color = selectedColor;
+                    note.notificationTime = notificationTime;
+                    note.notified = false; // Reset notification status on edit
+                } else {
+                    const newNote = {
+                        id: Date.now(),
+                        content,
+                        color: selectedColor,
+                        notificationTime,
+                        notified: false
+                    };
+                    notes.push(newNote);
+                }
+
+                saveNotes();
+                renderNotes();
+                closeModal();
+            });
+
+            notesContainer.addEventListener('click', (e) => {
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                const id = Number(target.dataset.id);
+
+                if (target.classList.contains('edit-btn')) {
+                    const noteToEdit = notes.find(n => n.id === id);
+                    openModal(noteToEdit);
+                }
+
+                if (target.classList.contains('delete-btn')) {
+                    if (confirm('¿Estás seguro de que quieres eliminar esta nota?')) {
+                        notes = notes.filter(n => n.id !== id);
+                        saveNotes();
+                        renderNotes();
+                    }
+                }
+            });
+
+            // Cerrar modal al hacer clic fuera
+            noteModal.addEventListener('click', (e) => {
+                if (e.target === noteModal) {
+                    closeModal();
+                }
+            });
+            
+            // --- Inicialización ---
+            requestNotificationPermission();
+            renderNotes();
+            setInterval(checkNotifications, 15000); // Revisa cada 15 segundos
+        });
+    </script>
+
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .catch(err => console.warn('SW registration failed:', err));
+  });
+}
+</script>
+</body>
+</html>
