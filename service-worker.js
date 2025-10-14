@@ -59,3 +59,51 @@ self.addEventListener('fetch', (event) => {
     }).catch(() => caches.match(request))
   );
 });
+
+
+// --- Notifications & Push handlers ---
+
+// Show notification on message from the page (no backend needed)
+self.addEventListener('message', event => {
+  const data = event.data || {};
+  if (data.type === 'SHOW_NOTIFICATION') {
+    const title = data.title || 'Notificación';
+    const options = {
+      body: data.body || '',
+      tag: data.tag || 'msg',
+      icon: './icons/icon-192.png',
+      badge: './icons/icon-192.png',
+      data: { url: data.url || './' }
+    };
+    event.waitUntil(self.registration.showNotification(title, options));
+  }
+});
+
+// Handle real Push (requires backend to send push messages)
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch(e){}
+  const title = data.title || 'Mensaje nuevo';
+  const options = {
+    body: data.body || '',
+    tag: data.tag || 'push',
+    icon: './icons/icon-192.png',
+    badge: './icons/icon-192.png',
+    data: { url: data.url || './' }
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// Click on notification -> focus/open app
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || './';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if ('focus' in client) return client.focus();
+      }
+      if (clients.openWindow) return clients.openWindow(targetUrl);
+    })
+  );
+});

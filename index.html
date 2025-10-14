@@ -26,7 +26,7 @@
             filter: invert(1);
         }
     </style>
-<meta content="#111827" name="theme-color"/><link href="manifest.webmanifest" rel="manifest"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/><link href="icons/icon-192.png" rel="icon" sizes="192x192"/><link href="icons/icon-512.png" rel="icon" sizes="512x512"/></head>
+<meta content="#111827" name="theme-color"/><link href="manifest.webmanifest" rel="manifest"/><meta content="yes" name="apple-mobile-web-app-capable"/><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/><link href="icons/icon-192.png" rel="icon" sizes="192x192"/><link href="icons/icon-512.png" rel="icon" sizes="512x512"/><link href="icons/icon-192.png" rel="apple-touch-icon"/><meta content="yes" name="mobile-web-app-capable"/></head>
 <body class="bg-gray-900 text-white font-sans antialiased">
 <div class="container mx-auto px-4 py-8 min-h-screen" id="app">
 <h1 class="text-4xl font-bold text-center mb-10">¡Notas cortas!</h1>
@@ -261,7 +261,6 @@
             setInterval(checkNotifications, 15000); // Revisa cada 15 segundos
         });
     </script>
-
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
@@ -270,5 +269,91 @@ if ('serviceWorker' in navigator) {
   });
 }
 </script>
-</body>
+<div id="pwa-tools" style="position:fixed;bottom:12px;left:12px;right:12px;display:flex;gap:.5rem;flex-wrap:wrap;z-index:9999;background:#111827cc;color:#fff;padding:.75rem;border-radius:.75rem;backdrop-filter:blur(6px);font-family:system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, sans-serif;"><button id="btn-install" style="appearance:none;border:0;background:#22c55e;color:#111827;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer;font-weight:600">📲 Instalar app</button><button id="btn-test" style="appearance:none;border:0;background:#4b5563;color:#fff;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer">🔔 Probar notificación</button><button id="btn-push" style="appearance:none;border:0;background:#4b5563;color:#fff;padding:.5rem .75rem;border-radius:.5rem;cursor:pointer">📡 Activar Push (avanzado)</button></div><script id="pwa-notify-script">
+(function(){
+  const $ = (id)=>document.getElementById(id);
+  async function ensureSW(){
+    if (!('serviceWorker' in navigator)) throw new Error('SW no soportado');
+    const reg = await navigator.serviceWorker.getRegistration() || await navigator.serviceWorker.register('./service-worker.js');
+    return reg;
+  }
+
+  async function askPermission(){
+    if (!('Notification' in window)) throw new Error('Notifications no soportadas');
+    let perm = Notification.permission;
+    if (perm === 'default') perm = await Notification.requestPermission();
+    if (perm !== 'granted') throw new Error('Permiso denegado');
+    return perm;
+  }
+
+  // Simple local notification via SW (sin backend)
+  async function testNotification(){
+    await askPermission();
+    const reg = await ensureSW();
+    if (reg.active) {
+      reg.active.postMessage({
+        type: 'SHOW_NOTIFICATION',
+        title: '¡Hola, Daniel!',
+        body: 'Esto es una notificación de prueba 💡',
+        tag: 'test-'+Date.now()
+      });
+    } else {
+      // Fallback mientras el SW se activa
+      new Notification('¡Hola, Daniel!', { body: 'Esto es una notificación de prueba 💡' });
+    }
+  }
+
+  // Push API (requiere backend + VAPID)
+  async function activatePush(){
+    await askPermission();
+    const reg = await ensureSW();
+    const vapidPublicKey = (window.PWA_VAPID_PUBLIC_KEY || 'REEMPLAZA_CON_TU_VAPID_PUBLIC_KEY_BASE64URL');
+    // Convert base64url to Uint8Array
+    function urlBase64ToUint8Array(base64String) {
+      const padding = '='.repeat((4 - base64String.length % 4) % 4);
+      const base64 = (base64String + padding).replace(/-/g, '+').replace(/_/g, '/');
+      const rawData = atob(base64);
+      const outputArray = new Uint8Array(rawData.length);
+      for (let i = 0; i < rawData.length; ++i) outputArray[i] = rawData.charCodeAt(i);
+      return outputArray;
+    }
+    const sub = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(vapidPublicKey)
+    });
+    console.log('Tu suscripción (enviala a tu backend /guardar-suscripcion):', JSON.stringify(sub));
+    alert('Listo. Revisa la consola: ya tenés la suscripción para enviar push desde tu servidor.');
+  }
+
+  document.addEventListener('click', (e)=>{
+    if (e.target && e.target.id === 'btn-test') testNotification().catch(err => alert('Error: '+ err.message));
+    if (e.target && e.target.id === 'btn-push') activatePush().catch(err => alert('Error: '+ err.message));
+  });
+})();
+</script><script id="pwa-install-script">
+(function(){
+  let deferredPrompt = null;
+  const btn = document.getElementById('btn-install');
+  window.addEventListener('beforeinstallprompt', (e) => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (btn) btn.style.display = 'inline-block';
+  });
+  if (btn) {
+    btn.style.display = 'none';
+    btn.addEventListener('click', async ()=>{
+      if (!deferredPrompt) { alert('Aún no disponible. Probá navegar un poquito y volver.'); return; }
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      deferredPrompt = null;
+      if (outcome !== 'accepted') alert('Instalación cancelada.');
+    });
+  }
+  // App Installed
+  window.addEventListener('appinstalled', ()=>{
+    if (btn) btn.style.display = 'none';
+    console.log('PWA instalada');
+  });
+})();
+</script></body>
 </html>
