@@ -1,442 +1,113 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Notas PWA</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIk5vdGFzIFBXQSIsCiAgInNob3J0X25hbWUiOiAiTm90YXMiLAogICJpY29ucyI6IFsKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL3BsYWNlaG9sZC5jby8xOTJ4MTkyL2ZmZmZmZi8wMDAwMDA/dGV4dD1Ob3RhcyIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJzaXplcyI6ICIxOTJ4MTkyIgogICAgfSwKICAgIHsKICAgICAgInNyYyI6ICJodHRwczovL3BsYWNlaG9sZC5jby81MTJ4NTEyL2ZmZmZmZi8wMDAwMDA/dGV4dD1Ob3RhcyIsCiAgICAgICJ0eXBlIjogImltYWdlL3BuZyIsCiAgICAgICJzaXplcyI6ICI1MTJ4NTEyIgogICAgfQogIF0sCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAidGhlbWVfY29sb3IiOiAiIzExMTgyNyIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzExMTgyNyIKfQ==">
-    <meta name="theme-color" content="#111827"/>
-    <style>
-        body {
-            background-color: #111827; /* Tailwind gray-900 */
-            font-family: 'Inter', sans-serif;
-        }
-        .note-card {
-            break-inside: avoid;
-            page-break-inside: avoid;
-        }
-        #notes-container {
-            column-count: 1;
-        }
-        @media (min-width: 640px) {
-            #notes-container {
-                column-count: 2;
-            }
-        }
-        @media (min-width: 1024px) {
-            #notes-container {
-                column-count: 3;
-            }
-        }
-        @media (min-width: 1280px) {
-            #notes-container {
-                column-count: 4;
-            }
-        }
-        /* Style for datetime-local icon */
-        input[type="datetime-local"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Notas con Notificaciones</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#ffffff">
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: auto; padding: 1rem; }
+    h1 { text-align: center; }
+    .note { border: 1px solid #ccc; padding: .5rem; margin-bottom: .5rem; border-radius: 5px; }
+    button { margin-top: .3rem; }
+  </style>
 </head>
-<body class="text-white">
+<body>
+  <h1>📒 Notas con Recordatorios</h1>
 
-    <div class="container mx-auto p-4 md:p-6">
-        <header class="flex justify-between items-center mb-6">
-            <h1 class="text-4xl font-bold">Mis Notas</h1>
-            <button id="install-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg transition-transform transform hover:scale-105 hidden">
-                Instalar App
-            </button>
-        </header>
+  <div>
+    <input id="noteTitle" placeholder="Título" style="width:100%;padding:.5rem;">
+    <textarea id="noteContent" placeholder="Contenido" style="width:100%;padding:.5rem;margin-top:.5rem;"></textarea>
+    <input id="noteTime" type="datetime-local" style="width:100%;padding:.5rem;margin-top:.5rem;">
+    <button onclick="addNote()">Agregar nota con recordatorio</button>
+  </div>
 
-        <!-- Contenedor de notas -->
-        <div id="notes-container" class="gap-4">
-            <!-- Las notas se insertarán aquí -->
-        </div>
-    </div>
+  <div id="notesContainer"></div>
 
-    <!-- Botón para agregar nueva nota -->
-    <button id="add-note-btn" class="fixed bottom-8 right-8 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full w-16 h-16 flex items-center justify-center text-3xl shadow-lg transition-transform transform hover:scale-110">
-        +
-    </button>
+<script>
+let notes = [];
 
-    <!-- Modal para crear/editar nota -->
-    <div id="note-modal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center hidden z-50 p-4">
-        <div class="bg-gray-800 rounded-2xl shadow-xl w-full max-w-md p-6 transform transition-all scale-95 opacity-0" id="modal-content">
-            <h2 id="modal-title" class="text-2xl font-bold mb-4">Nueva Nota</h2>
-            <form id="note-form">
-                <input type="hidden" id="note-id">
-                <div class="mb-4">
-                    <label for="note-title" class="block text-sm font-medium text-gray-400 mb-1">Título</label>
-                    <input type="text" id="note-title" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Título de la nota">
-                </div>
-                <div class="mb-4">
-                    <label for="note-content" class="block text-sm font-medium text-gray-400 mb-1">Contenido</label>
-                    <textarea id="note-content" rows="6" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500" placeholder="Escribe tu nota aquí..."></textarea>
-                </div>
-                <div class="mb-4">
-                    <label class="block text-sm font-medium text-gray-400 mb-2">Color</label>
-                    <div id="color-palette" class="flex flex-wrap gap-2">
-                        <!-- Colores se insertarán aquí -->
-                    </div>
-                </div>
-                <div class="mb-6">
-                    <label for="note-notification" class="block text-sm font-medium text-gray-400 mb-1">Recordatorio</label>
-                    <input type="datetime-local" id="note-notification" class="w-full bg-gray-700 border border-gray-600 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-indigo-500">
-                </div>
-                <div class="flex justify-between items-center w-full mt-4">
-                    <button type="button" id="delete-btn" class="bg-red-700 hover:bg-red-800 text-white font-bold py-2 px-4 rounded-lg hidden">Eliminar</button>
-                    <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-4 rounded-lg ml-auto">Guardar</button>
-                </div>
-            </form>
-        </div>
-    </div>
+// ✅ Registrar el Service Worker
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(console.error);
+}
 
-    <!-- Toast Notification -->
-    <div id="toast" class="fixed top-5 -right-full bg-red-600 text-white py-2 px-5 rounded-lg shadow-lg transition-all duration-300 z-50">
-        <p id="toast-message"></p>
-    </div>
-    
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const notesContainer = document.getElementById('notes-container');
-            const addNoteBtn = document.getElementById('add-note-btn');
-            const noteModal = document.getElementById('note-modal');
-            const modalContent = document.getElementById('modal-content');
-            const modalTitle = document.getElementById('modal-title');
-            const noteForm = document.getElementById('note-form');
-            const deleteBtn = document.getElementById('delete-btn');
-            const noteIdInput = document.getElementById('note-id');
-            const noteTitleInput = document.getElementById('note-title');
-            const noteContentInput = document.getElementById('note-content');
-            const noteNotificationInput = document.getElementById('note-notification');
-            const colorPalette = document.getElementById('color-palette');
-            const installBtn = document.getElementById('install-btn');
-            const toast = document.getElementById('toast');
-            const toastMessage = document.getElementById('toast-message');
-            let toastTimeout;
+// ✅ Pedir permiso para notificaciones al inicio
+if ('Notification' in window) {
+  Notification.requestPermission().then(perm => console.log('Permiso de notificación:', perm));
+}
 
-            let notes = JSON.parse(localStorage.getItem('notes-pwa')) || [];
-            let deferredPrompt;
-            
-            const colors = {
-                'bg-gray-700': '#374151',
-                'bg-red-900': '#7f1d1d',
-                'bg-yellow-900': '#713f12',
-                'bg-green-900': '#14532d',
-                'bg-blue-900': '#1e3a8a',
-                'bg-indigo-900': '#312e81',
-                'bg-purple-900': '#581c87',
-                'bg-pink-900': '#831843'
-            };
+// Programar recordatorios en la página
+const timers = new Map();
 
-            const bgToBorder = {
-                'bg-gray-700': 'border-gray-500',
-                'bg-red-900': 'border-red-500',
-                'bg-yellow-900': 'border-yellow-500',
-                'bg-green-900': 'border-green-500',
-                'bg-blue-900': 'border-blue-500',
-                'bg-indigo-900': 'border-indigo-500',
-                'bg-purple-900': 'border-purple-500',
-                'bg-pink-900': 'border-pink-500'
-            };
+function scheduleInPage(note) {
+  clearInPage(note.id);
+  if (!note.notificationTime || note.notificationTime <= Date.now()) return;
+  const delay = note.notificationTime - Date.now();
+  const t = setTimeout(() => {
+    postNotificationMessage('show-now', {
+      title: note.title || 'Recordatorio',
+      body: note.content.substring(0, 100),
+      tag: `note-${note.id}`,
+      icon: './icons/icon-192.png'
+    });
+  }, delay);
+  timers.set(note.id, t);
+}
 
-            // --- Service Worker y PWA ---
-            if ('serviceWorker' in navigator) {
-                const serviceWorkerContent = `
-                    self.addEventListener('install', event => {
-                        self.skipWaiting();
-                    });
+function clearInPage(id) {
+  if (timers.has(id)) {
+    clearTimeout(timers.get(id));
+    timers.delete(id);
+  }
+}
 
-                    self.addEventListener('activate', event => {
-                        event.waitUntil(self.clients.claim());
-                    });
-                    
-                    self.addEventListener('message', event => {
-                        if (!event.data) return;
+function postNotificationMessage(type, payload){
+  navigator.serviceWorker?.ready.then(reg => {
+    if (reg.active) reg.active.postMessage({ type, payload });
+  });
+}
 
-                        const { type, payload } = event.data;
+function addNote() {
+  const title = document.getElementById('noteTitle').value;
+  const content = document.getElementById('noteContent').value;
+  const timeValue = document.getElementById('noteTime').value;
+  if (!title && !content) return alert('Escribí algo primero 😉');
 
-                        if (type === 'schedule-notification') {
-                            const { title, body, tag, time } = payload;
-                            const options = {
-                                body: body,
-                                tag: tag,
-                                icon: 'https://placehold.co/192x192/ffffff/000000?text=Nota'
-                            };
+  const note = {
+    id: Date.now(),
+    title,
+    content,
+    notificationTime: timeValue ? new Date(timeValue).getTime() : null
+  };
+  notes.push(note);
+  renderNotes();
+  scheduleInPage(note);
+  document.getElementById('noteTitle').value = '';
+  document.getElementById('noteContent').value = '';
+  document.getElementById('noteTime').value = '';
+}
 
-                            // Use the reliable, modern API if supported
-                            if ('showTrigger' in Notification.prototype) {
-                                const trigger = new TimestampTrigger(time);
-                                self.registration.showNotification(title, { ...options, showTrigger: trigger });
-                            } else {
-                                // Use the less reliable setTimeout as a fallback
-                                const delay = time - Date.now();
-                                if (delay > 0) {
-                                    setTimeout(() => {
-                                        self.registration.showNotification(title, options);
-                                    }, delay);
-                                }
-                            }
-                        } else if (type === 'cancel-notification') {
-                            const { tag } = payload;
-                            self.registration.getNotifications({ tag: tag }).then(notifications => {
-                                notifications.forEach(notification => notification.close());
-                            });
-                        }
-                    });
-                `;
-                const blob = new Blob([serviceWorkerContent], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(blob);
-                
-                navigator.serviceWorker.register(swUrl)
-                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
-                    .catch(error => console.log('Error en el registro del Service Worker:', error));
-            }
+function deleteNote(id) {
+  notes = notes.filter(n => n.id !== id);
+  clearInPage(id);
+  renderNotes();
+}
 
-            window.addEventListener('beforeinstallprompt', (e) => {
-                e.preventDefault();
-                deferredPrompt = e;
-                installBtn.classList.remove('hidden');
-            });
+function renderNotes() {
+  const container = document.getElementById('notesContainer');
+  container.innerHTML = '';
+  notes.forEach(note => {
+    const div = document.createElement('div');
+    div.className = 'note';
+    div.innerHTML = `<strong>${note.title}</strong><br>${note.content}<br>` +
+      (note.notificationTime ? `<small>Recordatorio: ${new Date(note.notificationTime).toLocaleString()}</small><br>` : '') +
+      `<button onclick="deleteNote(${note.id})">Borrar</button>`;
+    container.appendChild(div);
+  });
+}
+</script>
 
-            installBtn.addEventListener('click', (e) => {
-                installBtn.classList.add('hidden');
-                deferredPrompt.prompt();
-                deferredPrompt.userChoice.then((choiceResult) => {
-                    deferredPrompt = null;
-                });
-            });
-            
-            const showToast = (message) => {
-                clearTimeout(toastTimeout);
-                toastMessage.textContent = message;
-                toast.classList.remove('-right-full');
-                toast.classList.add('right-5');
-                
-                toastTimeout = setTimeout(() => {
-                    toast.classList.remove('right-5');
-                    toast.classList.add('-right-full');
-                }, 3000);
-            };
-
-            // --- Notificaciones ---
-            const requestNotificationPermission = async () => {
-                if ('Notification' in window) {
-                   return await Notification.requestPermission();
-                }
-                return 'denied';
-            };
-            
-            // --- Lógica de la App ---
-            const saveNotes = () => {
-                localStorage.setItem('notes-pwa', JSON.stringify(notes));
-            };
-
-            const renderNotes = () => {
-                notesContainer.innerHTML = '';
-                if(notes.length === 0){
-                    notesContainer.innerHTML = `<div class="text-center text-gray-500 col-span-full py-10">
-                        <p class="text-xl">No hay notas todavía.</p>
-                        <p>¡Crea una nueva con el botón '+'!</p>
-                    </div>`;
-                    return;
-                }
-                notes.sort((a, b) => b.id - a.id).forEach(note => {
-                    const noteEl = document.createElement('div');
-                    const borderColor = bgToBorder[note.color] || 'border-gray-500';
-                    noteEl.className = `note-card bg-gray-800 p-5 rounded-xl shadow-lg mb-4 border-l-4 ${borderColor} cursor-pointer hover:shadow-indigo-500/30 transition-shadow`;
-                    noteEl.dataset.id = note.id;
-
-                    const title = note.title ? `<h3 class="font-bold text-lg mb-2 truncate">${note.title}</h3>` : '';
-                    const content = `<p class="text-gray-300 whitespace-pre-wrap break-words">${note.content}</p>`;
-                    
-                    let notificationInfo = '';
-                    if (note.notificationTime) {
-                        const date = new Date(note.notificationTime);
-                        if (date > new Date()) {
-                           notificationInfo = `<div class="text-xs text-indigo-400 mt-3 pt-3 border-t border-gray-700">Recordatorio: ${date.toLocaleString()}</div>`;
-                        }
-                    }
-
-                    noteEl.innerHTML = `
-                        ${title}
-                        ${content}
-                        ${notificationInfo}
-                    `;
-                    noteEl.addEventListener('click', () => openModal(note.id));
-                    notesContainer.appendChild(noteEl);
-                });
-            };
-
-            const initColorPalette = () => {
-                colorPalette.innerHTML = '';
-                Object.keys(colors).forEach(colorClass => {
-                    const colorDiv = document.createElement('div');
-                    colorDiv.className = `w-8 h-8 rounded-full cursor-pointer border-2 border-transparent hover:border-white transition-all ${colorClass}`;
-                    colorDiv.dataset.color = colorClass;
-                    colorDiv.addEventListener('click', () => {
-                        colorPalette.querySelectorAll('div').forEach(d => d.classList.remove('border-white', 'scale-110'));
-                        colorDiv.classList.add('border-white', 'scale-110');
-                    });
-                    colorPalette.appendChild(colorDiv);
-                });
-            };
-            
-            const formatDateForInput = (timestamp) => {
-                if (!timestamp) return "";
-                try {
-                     const date = new Date(timestamp);
-                     const timezoneOffset = date.getTimezoneOffset() * 60000;
-                     const localDate = new Date(date - timezoneOffset);
-                     return localDate.toISOString().slice(0, 16);
-                } catch(e) {
-                    return "";
-                }
-            };
-
-            const openModal = (id = null) => {
-                noteForm.reset();
-                initColorPalette();
-                deleteBtn.classList.add('hidden');
-                noteIdInput.value = '';
-                noteNotificationInput.value = '';
-
-                if (id) {
-                    const note = notes.find(n => n.id == id);
-                    if (note) {
-                        modalTitle.textContent = 'Editar Nota';
-                        noteIdInput.value = note.id;
-                        noteTitleInput.value = note.title;
-                        noteContentInput.value = note.content;
-                        noteNotificationInput.value = formatDateForInput(note.notificationTime);
-                        
-                        const selectedColorDiv = colorPalette.querySelector(`[data-color="${note.color}"]`);
-                        if(selectedColorDiv) {
-                           selectedColorDiv.classList.add('border-white', 'scale-110');
-                        }
-                        deleteBtn.classList.remove('hidden');
-                    }
-                } else {
-                    modalTitle.textContent = 'Nueva Nota';
-                    const firstColor = colorPalette.querySelector('div');
-                    if(firstColor) firstColor.classList.add('border-white', 'scale-110');
-                }
-                noteModal.classList.remove('hidden');
-                setTimeout(() => {
-                    modalContent.classList.remove('scale-95', 'opacity-0');
-                    modalContent.classList.add('scale-100', 'opacity-100');
-                }, 10);
-            };
-
-            const closeModal = () => {
-                modalContent.classList.remove('scale-100', 'opacity-100');
-                modalContent.classList.add('scale-95', 'opacity-0');
-                setTimeout(() => {
-                    noteModal.classList.add('hidden');
-                }, 200);
-            };
-
-            const postNotificationMessage = (type, payload) => {
-                if ('serviceWorker' in navigator) {
-                    navigator.serviceWorker.ready.then(registration => {
-                        registration.active.postMessage({ type, payload });
-                    });
-                }
-            };
-
-            const scheduleNotification = (note) => {
-                if (note.notificationTime && note.notificationTime > Date.now()) {
-                    postNotificationMessage('schedule-notification', {
-                        title: note.title || 'Recordatorio de nota',
-                        body: note.content.substring(0, 100),
-                        tag: `note-${note.id}`,
-                        time: note.notificationTime
-                    });
-                }
-            };
-
-            const cancelNotification = (note) => {
-                if (note.notificationTime) {
-                    postNotificationMessage('cancel-notification', {
-                        tag: `note-${note.id}`
-                    });
-                }
-            };
-            
-            noteForm.addEventListener('submit', async (e) => {
-                e.preventDefault();
-                const id = noteIdInput.value;
-                const title = noteTitleInput.value.trim();
-                const content = noteContentInput.value.trim();
-                const selectedColorEl = colorPalette.querySelector('.border-white');
-                const color = selectedColorEl ? selectedColorEl.dataset.color : Object.keys(colors)[0];
-                const notificationTimeValue = noteNotificationInput.value;
-                const notificationTimestamp = notificationTimeValue ? new Date(notificationTimeValue).getTime() : null;
-                
-                if (!content) {
-                    showToast('El contenido de la nota no puede estar vacío.');
-                    return;
-                }
-                
-                if (notificationTimestamp && notificationTimestamp > Date.now()) {
-                    const permission = await requestNotificationPermission();
-                    if (permission !== 'granted') {
-                        showToast("Permiso de notificaciones denegado.");
-                    }
-                }
-
-                if (id) {
-                    const noteIndex = notes.findIndex(n => n.id == id);
-                    if (noteIndex > -1) {
-                        const updatedNote = { ...notes[noteIndex], title, content, color, notificationTime: notificationTimestamp };
-                        notes[noteIndex] = updatedNote;
-                        scheduleNotification(updatedNote);
-                    }
-                } else {
-                    const newNote = {
-                        id: Date.now(),
-                        title,
-                        content,
-                        color,
-                        notificationTime: notificationTimestamp
-                    };
-                    notes.push(newNote);
-                    scheduleNotification(newNote);
-                }
-                
-                saveNotes();
-                renderNotes();
-                closeModal();
-            });
-
-            deleteBtn.addEventListener('click', () => {
-                const id = noteIdInput.value;
-                if (id) {
-                    const noteToDelete = notes.find(n => n.id == id);
-                    if (noteToDelete) {
-                        cancelNotification(noteToDelete);
-                    }
-                    notes = notes.filter(note => note.id != id);
-                    saveNotes();
-                    renderNotes();
-                    closeModal();
-                }
-            });
-            
-            // --- Event Listeners ---
-            addNoteBtn.addEventListener('click', () => openModal());
-            noteModal.addEventListener('click', (e) => {
-                if (e.target === noteModal) {
-                    closeModal();
-                }
-            });
-            
-            // --- Inicialización ---
-            requestNotificationPermission();
-            renderNotes();
-        });
-    </script>
 </body>
 </html>
