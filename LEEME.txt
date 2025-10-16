@@ -1,0 +1,21 @@
+Cómo integrarlo (express)
+1) Poné manifest.json, sw.js y /icons junto a tu index.html.
+2) En <head>:
+   <link rel="manifest" href="manifest.json">
+   <meta name="theme-color" content="#ffffff">
+3) Registrá el SW:
+   if ('serviceWorker' in navigator) {
+     navigator.serviceWorker.register('./sw.js').catch(console.error);
+   }
+4) En tu código, cuando toque disparar la noti:
+   function postNotificationMessage(type, payload){
+     navigator.serviceWorker?.ready.then(reg => {
+       if (reg.active) reg.active.postMessage({ type, payload });
+     });
+   }
+   postNotificationMessage('show-now', {
+     title: 'Recordatorio de nota',
+     body: 'Tu texto…',
+     tag: 'note-123',
+     icon: './icons/icon-192.png'
+   });
