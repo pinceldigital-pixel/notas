@@ -6,29 +6,7 @@
     <title>Notas PWA</title>
     
     <!-- PWA Manifest -->
-    <link rel="manifest" href="data:application/manifest+json,{
-        &quot;name&quot;: &quot;Notas PWA&quot;,
-        &quot;short_name&quot;: &quot;Notas&quot;,
-        &quot;start_url&quot;: &quot;.&quot;,
-        &quot;display&quot;: &quot;standalone&quot;,
-        &quot;background_color&quot;: &quot;#1c1c1c&quot;,
-        &quot;theme_color&quot;: &quot;#1c1c1c&quot;,
-        &quot;description&quot;: &quot;Una simple aplicación de notas PWA.&quot;,
-        &quot;icons&quot;: [
-            {
-                &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%231c1c1c'/%3E%3Ctext x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-size='96' fill='%23e0e0e0' dy='.1em'%3EN%3C/text%3E%3C/svg%3E&quot;,
-                &quot;sizes&quot;: &quot;192x192&quot;,
-                &quot;type&quot;: &quot;image/svg+xml&quot;,
-                &quot;purpose&quot;: &quot;any maskable&quot;
-            },
-            {
-                &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231c1c1c'/%3E%3Ctext x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-size='256' fill='%23e0e0e0' dy='.1em'%3EN%3C/text%3E%3C/svg%3E&quot;,
-                &quot;sizes&quot;: &quot;512x512&quot;,
-                &quot;type&quot;: &quot;image/svg+xml&quot;,
-                &quot;purpose&quot;: &quot;any maskable&quot;
-            }
-        ]
-    }">
+    <link rel="manifest" href="manifest.webmanifest">
 
     <style>
         :root {
@@ -116,8 +94,8 @@
 
         #notes-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 0.45rem; /* Reducido */
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 0.35rem; /* Reducido */
             flex-grow: 1;
         }
         
@@ -132,7 +110,7 @@
 
         .note-card {
             background-color: var(--surface-color);
-            padding: 0.3rem 0.45rem; /* Reducido */
+            padding: 0.28rem 0.4rem; /* Reducido */
             border-radius: 6px;
             border-left: 3px solid;
             display: flex;
@@ -144,9 +122,9 @@
         .note-content {
             white-space: pre-wrap;
             word-wrap: break-word;
-            line-height: 1.25; /* Reducido */
+            line-height: 1.22; /* Reducido */
             color: var(--primary-text-color);
-            font-size: 0.8rem; /* Reducido */
+            font-size: 0.78rem; /* Reducido */
             cursor: pointer;
         }
 
@@ -154,7 +132,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.6rem; /* Reducido */
+            font-size: 0.58rem; /* Reducido */
             color: var(--secondary-text-color);
         }
 
@@ -208,13 +186,13 @@
             bottom: 1.5rem;
             left: 50%;
             transform: translateX(-50%);
-            width: 52px;
-            height: 52px;
+            width: 50px;
+            height: 50px;
             background-color: var(--accent-color);
             color: var(--background-color);
             border: none;
             border-radius: 50%;
-            font-size: 1.8rem;
+            font-size: 1.7rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -354,7 +332,7 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Notas">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-
+    
 </head>
 <body>
 
@@ -409,29 +387,9 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Service Worker Registration
             if ('serviceWorker' in navigator) {
-                console.log('Service Worker is supported.');
-                const swCode = `
-                    const CACHE_NAME = 'notas-pwa-cache-v3';
-                    const urlsToCache = ['.'];
-                    self.addEventListener('install', event => {
-                        event.waitUntil(
-                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
-                        );
-                    });
-                    self.addEventListener('fetch', event => {
-                        event.respondWith(
-                            caches.match(event.request).then(response => {
-                                return response || fetch(event.request);
-                            })
-                        );
-                    });
-                `;
-                const swBlob = new Blob([swCode], { type: 'application/javascript' });
-                const swUrl = URL.createObjectURL(swBlob);
-
-                navigator.serviceWorker.register(swUrl)
-                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
-                    .catch(error => console.log('Error al registrar el Service Worker:', error));
+                navigator.serviceWorker.register('./sw.js')
+                  .then(registration => console.log('Service Worker registrado con éxito:', registration.scope))
+                  .catch(error => console.log('Error al registrar el Service Worker:', error));
             }
 
             // PWA Install handler
