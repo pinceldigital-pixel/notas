@@ -677,5 +677,105 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 </script>
 
+
+<script>
+// --- Recordatorios programados (Android/Chrome) ---
+(function(){
+  const TIMER_MAP = {};
+  const STORAGE_KEY = 'notes-pwa';
+
+  function readNotes(){
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch(e){ return []; }
+  }
+  function writeNotes(arr){
+    try { localStorage.setItem(STORAGE_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  async function showReminder(note){
+    try{
+      if (!('Notification' in window) || !navigator.serviceWorker) return;
+      if (Notification.permission !== 'granted') return;
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) return;
+      await reg.showNotification('Recordatorio', {
+        body: (note.content || '').slice(0, 80),
+        icon: './icon-192.png',
+        badge: './icon-192.png',
+        tag: 'nota-' + note.id,
+        data: { id: note.id }
+      });
+    }catch(e){ console.log('Notif error', e); }
+  }
+
+  function scheduleOne(note){
+    if (!note || !note.reminder) return;
+    const when = new Date(note.reminder).getTime();
+    if (!when || isNaN(when)) return;
+
+    const now = Date.now();
+    // Si ya venció y no notificó, disparar ya
+    if (when <= now && !note.notified){
+      showReminder(note);
+      note.notified = true;
+      const all = readNotes().map(n => n.id === note.id ? note : n);
+      writeNotes(all);
+      return;
+    }
+    // Si es a futuro: programar un timeout (hasta ~24 días máximo en JS)
+    const delay = when - now;
+    if (delay > 0){
+      clearTimeout(TIMER_MAP[note.id]);
+      TIMER_MAP[note.id] = setTimeout(() => {
+        // Releer por si cambió
+        const arr = readNotes();
+        const found = arr.find(n=>n.id===note.id);
+        if (found && !found.notified){
+          showReminder(found);
+          found.notified = true;
+          writeNotes(arr.map(n=>n.id===found.id?found:n));
+        }
+      }, Math.min(delay, 2147483647)); // cap a ~24.8 días
+    }
+  }
+
+  function scheduleAll(){
+    const arr = readNotes();
+    arr.forEach(scheduleOne);
+  }
+
+  // Pedir permiso al cargar
+  document.addEventListener('DOMContentLoaded', () => {
+    if ('Notification' in window && Notification.permission === 'default'){
+      Notification.requestPermission();
+    }
+    // 1) Programar todos los existentes
+    scheduleAll();
+
+    // 2) Reprogramar cada vez que se vuelve visible (atrapa recordatorios vencidos con la app cerrada)
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) scheduleAll();
+    });
+
+    // 3) Poll cada 60s para no depender sólo de timeouts largos
+    setInterval(scheduleAll, 60000);
+
+    // 4) Hook suave: si existe renderNotes, lo envolvemos para reprogramar al crear/editar/borrar
+    setTimeout(() => {
+      try{
+        if (typeof renderNotes === 'function'){
+          const _render = renderNotes;
+          window.renderNotes = function(){
+            const r = _render.apply(this, arguments);
+            scheduleAll();
+            return r;
+          };
+        }
+      }catch(e){}
+    }, 0);
+  });
+})();
+</script>
+
 </body>
 </html>
