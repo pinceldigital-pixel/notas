@@ -1,0 +1,627 @@
+
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notas PWA</title>
+    
+    <!-- PWA Manifest -->
+    <link rel="manifest" href="data:application/manifest+json,{
+        &quot;name&quot;: &quot;Notas PWA&quot;,
+        &quot;short_name&quot;: &quot;Notas&quot;,
+        &quot;start_url&quot;: &quot;.&quot;,
+        &quot;display&quot;: &quot;standalone&quot;,
+        &quot;background_color&quot;: &quot;#1c1c1c&quot;,
+        &quot;theme_color&quot;: &quot;#1c1c1c&quot;,
+        &quot;description&quot;: &quot;Una simple aplicación de notas PWA.&quot;,
+        &quot;icons&quot;: [
+            {
+                &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 192 192'%3E%3Crect width='192' height='192' fill='%231c1c1c'/%3E%3Ctext x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-size='96' fill='%23e0e0e0' dy='.1em'%3EN%3C/text%3E%3C/svg%3E&quot;,
+                &quot;sizes&quot;: &quot;192x192&quot;,
+                &quot;type&quot;: &quot;image/svg+xml&quot;,
+                &quot;purpose&quot;: &quot;any maskable&quot;
+            },
+            {
+                &quot;src&quot;: &quot;data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'%3E%3Crect width='512' height='512' fill='%231c1c1c'/%3E%3Ctext x='50%' y='50%' dominant-baseline='central' text-anchor='middle' font-family='sans-serif' font-size='256' fill='%23e0e0e0' dy='.1em'%3EN%3C/text%3E%3C/svg%3E&quot;,
+                &quot;sizes&quot;: &quot;512x512&quot;,
+                &quot;type&quot;: &quot;image/svg+xml&quot;,
+                &quot;purpose&quot;: &quot;any maskable&quot;
+            }
+        ]
+    }">
+
+    <style>
+        :root {
+            /* Paleta de colores oscuros y neutros */
+            --background-color: #1c1c1c;
+            --surface-color: #2a2a2a;
+            --primary-text-color: #e0e0e0;
+            --secondary-text-color: #a0a0a0;
+            --accent-color: #61afef;
+            --danger-color: #e06c75;
+            
+            /* Paleta de colores vibrantes */
+            --color-red: #ff5252;
+            --color-blue: #448aff;
+            --color-green: #00c853;
+            --color-yellow: #ffd600;
+            --color-purple: #d500f9;
+            --color-orange: #ff6d00;
+            --color-teal: #00bfa5;
+            --color-pink: #ff4081;
+            --color-gray: #757575;
+        }
+
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background-color);
+            color: var(--primary-text-color);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        
+        .container {
+            width: 100%;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0.75rem;
+            display: flex;
+            flex-direction: column;
+            flex-grow: 1;
+        }
+
+        header {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+        }
+
+        #install-btn {
+            display: none; /* Hidden by default */
+            position: absolute;
+            right: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: var(--surface-color);
+            color: var(--accent-color);
+            border: 1px solid var(--accent-color);
+            border-radius: 6px;
+            padding: 0.3rem 0.6rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        #install-btn:hover {
+            background-color: var(--accent-color);
+            color: var(--background-color);
+        }
+
+        #notes-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.75rem;
+            flex-grow: 1;
+        }
+        
+        #notes-container.empty-state {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            color: var(--secondary-text-color);
+             opacity: 0.5;
+        }
+
+        .note-card {
+            background-color: var(--surface-color);
+            padding: 0.5rem 0.75rem;
+            border-radius: 6px;
+            border-left: 3px solid;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .note-content {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.4;
+            color: var(--primary-text-color);
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+
+        .note-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.7rem;
+            color: var(--secondary-text-color);
+        }
+
+        .note-reminder {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+        }
+        
+        .note-reminder svg {
+            width: 10px;
+            height: 10px;
+            flex-shrink: 0;
+        }
+
+        .note-actions {
+            display: flex;
+        }
+
+        .note-actions button {
+            background: none;
+            border: none;
+            cursor: pointer;
+            padding: 0.2rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s ease;
+        }
+        
+        .note-actions button:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+
+        .note-actions button svg {
+            width: 14px;
+            height: 14px;
+            stroke: var(--secondary-text-color);
+            transition: stroke 0.2s ease;
+        }
+        .note-actions button.delete-btn:hover svg {
+            stroke: var(--danger-color);
+        }
+        .note-actions button.edit-btn:hover svg {
+            stroke: var(--accent-color);
+        }
+
+        #add-note-btn {
+            position: fixed;
+            bottom: 1.5rem;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 56px;
+            height: 56px;
+            background-color: var(--accent-color);
+            color: var(--background-color);
+            border: none;
+            border-radius: 50%;
+            font-size: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            transition: transform 0.2s ease, background-color 0.2s ease;
+        }
+
+        #add-note-btn:hover {
+            transform: translateX(-50%) scale(1.1);
+        }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+            z-index: 1000;
+        }
+
+        .modal-overlay.visible {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .modal-content {
+            background-color: var(--surface-color);
+            padding: 1.5rem;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 450px;
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.3);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+        }
+        .modal-overlay.visible .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-content h2 {
+            margin-bottom: 1rem;
+            text-align: center;
+            font-size: 1.2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: var(--secondary-text-color);
+            font-size: 0.8rem;
+        }
+        
+        #note-input, #reminder-input {
+            width: 100%;
+            background-color: var(--background-color);
+            border: 1px solid #4a4a4a;
+            border-radius: 6px;
+            padding: 0.6rem;
+            color: var(--primary-text-color);
+            font-family: 'Inter', sans-serif;
+            font-size: 0.9rem;
+        }
+        #note-input {
+            height: 120px;
+            resize: vertical;
+        }
+
+        .color-selector {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+        }
+        
+        .color-option {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 2px solid transparent;
+        }
+
+        .color-option.selected {
+            transform: scale(1.15);
+            border-color: var(--primary-text-color);
+        }
+
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 0.75rem;
+            margin-top: 1.5rem;
+        }
+
+        .modal-actions button {
+            padding: 0.6rem 1.2rem;
+            border-radius: 6px;
+            border: none;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9rem;
+            transition: background-color 0.2s ease;
+        }
+
+        #cancel-btn {
+            background-color: #4a4a4a;
+            color: var(--primary-text-color);
+        }
+        #cancel-btn:hover {
+            background-color: #5a5a5a;
+        }
+
+        #save-btn {
+            background-color: var(--accent-color);
+            color: var(--background-color);
+        }
+         #save-btn:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header>
+            <h1>Notas</h1>
+            <button id="install-btn">Instalar App</button>
+        </header>
+        <main id="notes-container"></main>
+    </div>
+
+    <button id="add-note-btn" aria-label="Añadir nueva nota">+</button>
+
+    <div class="modal-overlay" id="note-modal">
+        <div class="modal-content">
+            <h2 id="modal-title">Nueva Nota</h2>
+            <form id="note-form">
+                <div class="form-group">
+                    <label for="note-input">Contenido</label>
+                    <textarea id="note-input" required></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label>Color</label>
+                    <div class="color-selector" id="color-selector">
+                        <div class="color-option" data-color="var(--color-red)" style="background-color: var(--color-red);"></div>
+                        <div class="color-option" data-color="var(--color-blue)" style="background-color: var(--color-blue);"></div>
+                        <div class="color-option" data-color="var(--color-green)" style="background-color: var(--color-green);"></div>
+                        <div class="color-option" data-color="var(--color-yellow)" style="background-color: var(--color-yellow);"></div>
+                        <div class="color-option" data-color="var(--color-purple)" style="background-color: var(--color-purple);"></div>
+                        <div class="color-option" data-color="var(--color-orange)" style="background-color: var(--color-orange);"></div>
+                        <div class="color-option" data-color="var(--color-teal)" style="background-color: var(--color-teal);"></div>
+                        <div class="color-option" data-color="var(--color-pink)" style="background-color: var(--color-pink);"></div>
+                        <div class="color-option" data-color="var(--color-gray)" style="background-color: var(--color-gray);"></div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="reminder-input">Recordatorio (opcional)</label>
+                    <input type="datetime-local" id="reminder-input">
+                </div>
+                
+                <div class="modal-actions">
+                    <button type="button" id="cancel-btn">Cancelar</button>
+                    <button type="submit" id="save-btn">Guardar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Service Worker Registration
+            if ('serviceWorker' in navigator) {
+                console.log('Service Worker is supported.');
+                const swCode = `
+                    const CACHE_NAME = 'notas-pwa-cache-v2';
+                    const urlsToCache = ['.'];
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+                        );
+                    });
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request).then(response => {
+                                return response || fetch(event.request);
+                            })
+                        );
+                    });
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
+                    .catch(error => console.log('Error al registrar el Service Worker:', error));
+            }
+
+            // PWA Install handler
+            const installBtn = document.getElementById('install-btn');
+            let deferredPrompt;
+            console.log('Checking for beforeinstallprompt event...');
+
+            window.addEventListener('beforeinstallprompt', (e) => {
+                console.log('beforeinstallprompt event fired!');
+                e.preventDefault();
+                deferredPrompt = e;
+                installBtn.style.display = 'block';
+            });
+
+            installBtn.addEventListener('click', async () => {
+                if (deferredPrompt) {
+                    console.log('Install button clicked, showing prompt.');
+                    deferredPrompt.prompt();
+                    const { outcome } = await deferredPrompt.userChoice;
+                    console.log(`User response to the install prompt: ${outcome}`);
+                    deferredPrompt = null;
+                    installBtn.style.display = 'none';
+                } else {
+                    console.log('Install button clicked, but no deferredPrompt available.');
+                }
+            });
+            
+            window.addEventListener('appinstalled', () => {
+                console.log('PWA was installed');
+                installBtn.style.display = 'none';
+                deferredPrompt = null;
+            });
+
+
+            const notesContainer = document.getElementById('notes-container');
+            const addNoteBtn = document.getElementById('add-note-btn');
+            const noteModal = document.getElementById('note-modal');
+            const noteForm = document.getElementById('note-form');
+            const noteInput = document.getElementById('note-input');
+            const modalTitle = document.getElementById('modal-title');
+            const colorSelector = document.getElementById('color-selector');
+            const reminderInput = document.getElementById('reminder-input');
+            const cancelBtn = document.getElementById('cancel-btn');
+            
+            let notes = JSON.parse(localStorage.getItem('notes-pwa')) || [];
+            let editingNoteId = null;
+            let selectedColor = 'var(--color-gray)';
+
+            const renderNotes = () => {
+                notesContainer.innerHTML = '';
+                if (notes.length === 0) {
+                    notesContainer.classList.add('empty-state');
+                    notesContainer.innerHTML = '<h2>No hay notas todavía.<br>¡Crea una!</h2>';
+                    return;
+                }
+                notesContainer.classList.remove('empty-state');
+                
+                notes.sort((a, b) => b.timestamp - a.timestamp);
+
+                notes.forEach(note => {
+                    const noteEl = document.createElement('div');
+                    noteEl.classList.add('note-card');
+                    noteEl.dataset.id = note.id;
+                    noteEl.style.borderColor = note.color;
+                    
+                    let dateOrReminderHtml = '';
+                    if (note.reminder) {
+                        const reminderDate = new Date(note.reminder);
+                         dateOrReminderHtml = `
+                            <div class="note-reminder">
+                                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                                <span>${reminderDate.toLocaleString([], {year: '2-digit', month: '2-digit', day: '2-digit', hour: '2-digit', minute:'2-digit'})}</span>
+                            </div>
+                        `;
+                    } else {
+                        dateOrReminderHtml = `<span>${new Date(note.timestamp).toLocaleDateString()}</span>`;
+                    }
+
+                    noteEl.innerHTML = `
+                        <div class="note-content">${note.content.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+                        <div class="note-footer">
+                            <div class="note-meta">${dateOrReminderHtml}</div>
+                            <div class="note-actions">
+                                <button class="edit-btn" aria-label="Editar nota">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path></svg>
+                                </button>
+                                <button class="delete-btn" aria-label="Eliminar nota">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                    
+                    noteEl.querySelector('.delete-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        deleteNote(note.id);
+                    });
+
+                    noteEl.querySelector('.edit-btn').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openModal(note);
+                    });
+                     noteEl.querySelector('.note-content').addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        openModal(note);
+                    });
+
+                    notesContainer.appendChild(noteEl);
+                });
+            };
+
+            const saveNotes = () => {
+                localStorage.setItem('notes-pwa', JSON.stringify(notes));
+            };
+
+            const openModal = (note = null) => {
+                noteForm.reset();
+                if (note) {
+                    editingNoteId = note.id;
+                    modalTitle.textContent = 'Editar Nota';
+                    noteInput.value = note.content;
+                    reminderInput.value = note.reminder || '';
+                    selectedColor = note.color;
+                } else {
+                    editingNoteId = null;
+                    modalTitle.textContent = 'Nueva Nota';
+                    selectedColor = 'var(--color-gray)';
+                }
+                updateColorSelection();
+                noteModal.classList.add('visible');
+            };
+
+            const closeModal = () => {
+                noteModal.classList.remove('visible');
+            };
+            
+            const updateColorSelection = () => {
+                document.querySelectorAll('.color-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                    if (opt.dataset.color === selectedColor) {
+                        opt.classList.add('selected');
+                    }
+                });
+            };
+
+            const deleteNote = (id) => {
+                notes = notes.filter(note => note.id !== id);
+                saveNotes();
+                renderNotes();
+            };
+
+            addNoteBtn.addEventListener('click', () => openModal());
+            cancelBtn.addEventListener('click', closeModal);
+            noteModal.addEventListener('click', (e) => {
+                if (e.target === noteModal) {
+                    closeModal();
+                }
+            });
+
+            colorSelector.addEventListener('click', (e) => {
+                if(e.target.classList.contains('color-option')) {
+                    selectedColor = e.target.dataset.color;
+                    updateColorSelection();
+                }
+            });
+
+            noteForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const content = noteInput.value.trim();
+                if (!content) return;
+
+                const reminder = reminderInput.value;
+
+                if (editingNoteId) {
+                    const note = notes.find(n => n.id === editingNoteId);
+                    note.content = content;
+                    note.color = selectedColor;
+                    note.reminder = reminder;
+                } else {
+                    const newNote = {
+                        id: Date.now(),
+                        content,
+                        timestamp: Date.now(),
+                        color: selectedColor,
+                        reminder: reminder,
+                    };
+                    notes.push(newNote);
+                }
+                
+                saveNotes();
+                renderNotes();
+                closeModal();
+            });
+            
+            renderNotes();
+        });
+    </script>
+</body>
+</html>
+
