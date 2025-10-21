@@ -94,8 +94,8 @@
 
         #notes-container {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 0.35rem; /* Reducido */
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 0.6rem; /* Reducido */
             flex-grow: 1;
         }
         
@@ -110,7 +110,7 @@
 
         .note-card {
             background-color: var(--surface-color);
-            padding: 0.28rem 0.4rem; /* Reducido */
+            padding: 0.4rem 0.6rem; /* Reducido */
             border-radius: 6px;
             border-left: 3px solid;
             display: flex;
@@ -122,9 +122,9 @@
         .note-content {
             white-space: pre-wrap;
             word-wrap: break-word;
-            line-height: 1.22; /* Reducido */
+            line-height: 1.35; /* Reducido */
             color: var(--primary-text-color);
-            font-size: 0.78rem; /* Reducido */
+            font-size: 0.85rem; /* Reducido */
             cursor: pointer;
         }
 
@@ -132,7 +132,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            font-size: 0.58rem; /* Reducido */
+            font-size: 0.65rem; /* Reducido */
             color: var(--secondary-text-color);
         }
 
@@ -186,13 +186,13 @@
             bottom: 1.5rem;
             left: 50%;
             transform: translateX(-50%);
-            width: 50px;
-            height: 50px;
+            width: 56px;
+            height: 56px;
             background-color: var(--accent-color);
             color: var(--background-color);
             border: none;
             border-radius: 50%;
-            font-size: 1.7rem;
+            font-size: 2rem;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -332,7 +332,46 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="Notas">
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
-    
+
+
+    <style id="compact-overrides">
+      /* Compactación sin cambiar tu estructura ni JS */
+      #notes-container{ grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: .4rem; }
+      .note-card{ padding: .28rem .4rem; gap: .12rem; border-radius: 6px; }
+      .note-content{ font-size: .8rem; line-height: 1.2; max-height: 4.8rem; overflow: hidden; }
+      .note-footer{ font-size: .6rem; }
+      /* En móviles chicos, aseguramos 2 columnas si entra */
+      @media (max-width: 420px){
+        #notes-container{ grid-template-columns: repeat(2, minmax(0,1fr)); }
+      }
+    </style>
+
+
+<style id="compact-overrides-2">
+  /* 👇 Overrides más agresivos */
+  .note-card {
+    padding: 0.25rem 0.35rem !important;
+    max-height: 110px !important;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+  }
+  .note-content {
+    font-size: 0.75rem !important;
+    line-height: 1.15 !important;
+    max-height: 60px !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .note-footer {
+    font-size: 0.55rem !important;
+  }
+  #notes-container {
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)) !important;
+    gap: 0.35rem !important;
+  }
+</style>
+
 </head>
 <body>
 
@@ -387,9 +426,29 @@
         document.addEventListener('DOMContentLoaded', () => {
             // Service Worker Registration
             if ('serviceWorker' in navigator) {
-                navigator.serviceWorker.register('./sw.js')
-                  .then(registration => console.log('Service Worker registrado con éxito:', registration.scope))
-                  .catch(error => console.log('Error al registrar el Service Worker:', error));
+                console.log('Service Worker is supported.');
+                const swCode = `
+                    const CACHE_NAME = 'notas-pwa-cache-v3';
+                    const urlsToCache = ['.'];
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open(CACHE_NAME).then(cache => cache.addAll(urlsToCache))
+                        );
+                    });
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request).then(response => {
+                                return response || fetch(event.request);
+                            })
+                        );
+                    });
+                `;
+                const swBlob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(swBlob);
+
+                navigator.serviceWorker.register(swUrl)
+                    .then(registration => console.log('Service Worker registrado con éxito:', registration))
+                    .catch(error => console.log('Error al registrar el Service Worker:', error));
             }
 
             // PWA Install handler
